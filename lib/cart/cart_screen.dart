@@ -9,7 +9,7 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  List<Map<String, String>> cartItems = [];
+  List<Map<String, dynamic>> items = [];
 
   @override
   void initState() {
@@ -18,50 +18,58 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Future<void> loadCart() async {
-    final items = await CartService.getCart();
-    setState(() {
-      cartItems = items;
-    });
+    items = await CartService.getCartItems();
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Your Cart")),
+      appBar: AppBar(
+        title: const Text("Cart"),
+      ),
 
-      body: cartItems.isEmpty
-          ? const Center(child: Text("Your cart is empty"))
+      body: items.isEmpty
+          ? const Center(
+        child: Text(
+          "Cart is empty",
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      )
           : ListView.builder(
-        itemCount: cartItems.length,
-        itemBuilder: (_, index) {
-          final movie = cartItems[index];
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          final movie = items[index];
 
           return ListTile(
-            leading: Image.asset(movie["image"]!, width: 50),
-            title: Text(movie["title"]!),
-            subtitle: Text("${movie['price']} DT"),
-
-            // DELETE SINGLE MOVIE BUTTON
+            leading: SizedBox(
+              width: 60,
+              height: 60,
+              child: Image.network(
+                movie["image"],
+                fit: BoxFit.cover,
+              ),
+            ),
+            title: Text(movie["title"]),
+            subtitle: Text("${movie["price"]} DT"),
             trailing: IconButton(
               icon: const Icon(Icons.delete, color: Colors.red),
               onPressed: () async {
                 await CartService.removeFromCart(index);
-                await loadCart(); // refresh UI
+                loadCart();
               },
             ),
           );
         },
       ),
 
-
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.red,
+        child: const Icon(Icons.delete_forever),
         onPressed: () async {
           await CartService.clearCart();
-          await loadCart();
+          loadCart();
         },
-        icon: const Icon(Icons.delete),
-        label: const Text("Clear Cart"),
-        backgroundColor: Colors.red,
       ),
     );
   }

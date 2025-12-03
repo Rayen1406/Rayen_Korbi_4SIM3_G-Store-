@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
+import '../models/movie.dart';
+import '../services/tmdb_service.dart';
 import '../cart/cart_service.dart';
 
 class MovieDetailsScreen extends StatelessWidget {
-  final Map<String, dynamic> movie;
+  final Movie movie;
 
   const MovieDetailsScreen({super.key, required this.movie});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = Theme.of(context).textTheme.bodyLarge?.color
-        ?? (isDark ? Colors.white : Colors.black);
+    final imageUrl = TMDBService.getImageUrl(movie.posterPath);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -24,180 +23,99 @@ class MovieDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // IMAGE BANNER
+            // Poster
             Stack(
               children: [
-                Container(
-                  height: 320,
+                Image.network(
+                  imageUrl,
+                  height: 350,
                   width: double.infinity,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage(movie['image']),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+                  fit: BoxFit.cover,
                 ),
 
-                // Gradient overlay
                 Positioned(
                   bottom: 0,
+                  left: 0,
+                  right: 0,
                   child: Container(
-                    height: 140,
-                    width: MediaQuery.of(context).size.width,
-                    decoration: BoxDecoration(
+                    height: 200,
+                    decoration: const BoxDecoration(
                       gradient: LinearGradient(
+                        colors: [Colors.black, Colors.transparent],
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
-                        colors: [
-                          isDark ? Colors.black : Colors.white,
-                          Colors.transparent,
-                        ],
                       ),
-                    ),
-                  ),
-                ),
-
-                // SALE ribbon
-                Positioned(
-                  top: 40,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      "SALE",
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
-            // TITLE
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                movie['title'],
-                style: TextStyle(
-                  fontSize: 32,
+                movie.title,
+                style: const TextStyle(
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: textColor,
                 ),
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
-            // DESCRIPTION
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                movie['description'],
+                movie.overview,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 15,
+                  color: Colors.white.withOpacity(0.85),
                   height: 1.5,
-                  color: textColor.withOpacity(0.85),
                 ),
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // PRICE CARD
-            Container(
-              padding: const EdgeInsets.all(20),
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Prix",
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: textColor.withOpacity(0.7),
-                      )),
-                  Text(
-                    "${movie['price']} DT",
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // BUY BUTTON — ADD TO CART
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    await CartService.addToCart({
-                      "title": movie["title"],
-                      "image": movie["image"],
-                      "price": movie["price"],
-                    });
+              child: ElevatedButton(
+                onPressed: () async {
+                  await CartService.addToCart({
+                    "title": movie.title,
+                    "image": imageUrl,
+                    "price": (movie.vote * 1.3).toStringAsFixed(2),
+                  });
 
-                    showDialog(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text("Added to Cart"),
-                        content: Text("${movie['title']} has been added to your cart."),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text("OK"),
-                          )
-                        ],
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                  showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text("Added to Cart"),
+                      content: Text("${movie.title} has been added!"),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text("OK"),
+                        ),
+                      ],
                     ),
-                  ),
-                  child: Ink(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFFFF8A47),
-                          Color(0xFFFF6B3D),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        "Acheter",
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                    ),
-                  ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  minimumSize: const Size(double.infinity, 50),
+                ),
+                child: const Text(
+                  "Add to Cart",
+                  style: TextStyle(fontSize: 18),
                 ),
               ),
             ),
 
-            const SizedBox(height: 35),
+            const SizedBox(height: 40),
           ],
         ),
       ),
